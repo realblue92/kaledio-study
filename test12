@@ -1,0 +1,15 @@
+#include <iostream>
+
+void swap(int *p, int *q) {
+	int tmp;
+	tmp = *p;
+	*p = *q;
+	*q = tmp;
+}
+int main(void) {
+	int i = 3;
+	int j = 5;
+	swap(&i, &j);
+	std::cout << i << j << std::endl;
+	return 0;
+}
