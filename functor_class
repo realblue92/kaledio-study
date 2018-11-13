@@ -1,0 +1,78 @@
+#include <iostream>
+#include <string>
+
+// using namespace std; <- 되도록 지양합시다! 아래와 같이 필요한 것만 using keyword 붙여주세요.
+using std::string; using std::cout; using std::endl;
+
+
+/* [코드를 보기 전 참고하면 좋은 사족]
+ * For_each에 붙은 template <class IterT, class Func> 는 도대체 무엇인가???
+ * template <class IterT, class Func> 의 의미 :
+ * For_each 함수에서 나오는 IterT와 Func로 지정된 변수들의 datatype을 호출부에서
+ * 그때 그때 지정해서 써주겠다는 뜻입니다.
+ * 누가 지정할까요? 컴파일러가 그때 그때 지정해줍니다!
+ * 따라서, 본 프로그램에서는 IterT 는 int* 형, Func 는 PrintFunctor(추후 설명)가 되겠습니다.
+ *
+ * 그렇다면, 도대체 왜 쓸까요? 결론부터 말하면 프로그램의 효율성을 높이기 위해서 입니다.
+ * 아직 이해가 안되시는 분들은 열혈 C++ Chapter13, 14을 참고해주시면 됩니다.
+ * 생소해서 그렇지 엄청 어려운 개념은 아닙니다.
+ */
+template <class IterT, class Func>
+void For_each(IterT begin, IterT end, Func pf) {
+    while (begin != end) {
+        pf(*begin++);
+    }
+}
+
+/* [코드를 보기전 참고하면 좋은 사족2]
+ * PrintFunctor에 붙은 template <class T>는 도대체 무엇인가???
+ * template <class T>의 의미 :
+ * 구조체 PrintFunctor에서 나오는 T로 지정된 변수들의 datatype을 호출부에서
+ * 역시 그때 그때 지정해서 써주겠다는 뜻입니다.
+ * 누가 지정할까요? 역시, 상단 사족에 나온 것처럼 컴파일러가 그때 그때 지정해줍니다!
+ * 따라서, 본 프로그램에서는 T는 51 행에서 선언한 바와 같이 int형이 됩니다.
+ */
+template <class T>  // typename으로 쓰면 오류가 발생... why??
+struct PrintFunctor {
+    string sep; // 출력 구분자 정보
+    explicit PrintFunctor(const string& s = " ") : sep(s) { };
+    void operator()(T data) const {
+        cout << data << sep;
+    }
+};
+
+
+/* [코드를 보기전 참고하면 좋은 사족3]
+ * 53행의 For_each<int*, PrintFunctor<int>> (arr, arr +3, PrintFunctor<int>("/"))
+ * 이 해괴망측한건 도대체 뭔가요????
+ * 하나하나 차근차근 따져보겠습니다.
+ * 일단 For_each는 함수를 호출한 것이고, 함수가 인자 3개를 받는 것이므로
+ * actual parameter 는 arr, arr+3, PrintFunctor<int>("/") 가 되었네요. 결과
+ *
+ * 1) For_each<int*, PrintFunctor<int>>
+ * 먼저 For_each는 아까 나와있는대로 template을 사용하여 datatype을 그때그때 지정해준다 하였습니다.
+ * 따라서 여기에서는 IterT가 int*, Func의 datatype이 PrintFunctor<int>가 되었다고 보시면 됩니다.
+ *
+ * 2) PrintFunctor<int>
+ * PrintFunctor는 구조체이고, 역시 template을 사용하여 datatype을 그때그때 지정해준다 하였습니다.
+ * 따라서 PrintFunctor라는 구조체를 type을 For_each에 지정해주되,
+ * 여기에서는 T의 datatype이 int가 되었다고 보시면 됩니다.
+ *
+ * 3) (arr, arr+3, PrintFunctor<int>("/"))
+ * For_each의 인자이므로 For_each 함수를 보면,
+ * while문에서 begin과 end가 같지 않으면 true이므로 같을 때까지 반복하라는 것으로 보이네요.
+ * 그런데 이때, 1)에서 IterT type이 int*이므로, begin과 end는 int*형 변수로,
+ * main 함수의 arr의 주소와 arr+3의 주소가 같아질 때까지 반복하는 것임을 알 수 있습니다.
+ * 포인터형 변수는 + 정수 입력시 알아서 포인터가 가리키는 변수의 크기에 맞춰서 byte를 증가시켜주므로 int* 형이니까 4byte씩 증가하겠군요.
+ * 그리고, PrintFunctor<int>("/")는 PrintFunctor에 있는 ()라는 연산자 함수를 호출하고 있습니다.
+ * 이 때, 구조체 객체(instance)의 멤버 변수인 string 형 변수 sep은 모두 "/"로 될 것이라는 걸 알 수 있겠습니다.
+ * 또한 ()로 받은 *begin++ 인자는 int*인 begin이 가리키는 변수의 값이므로
+ * arr[0] 번째의 값 -> arr[1] 번째의 값 -> arr[2] 번째의 값을 구분자인 "/"와 함께 출력하게 되는 거라고 보시면 됩니다.
+ */
+int main()
+{
+    int arr[3] = { 10, 20, 30 };
+    For_each<int*, PrintFunctor<int>> (arr, arr + 3, PrintFunctor<int>("/"));
+    cout << endl;
+    return 0;
+}
